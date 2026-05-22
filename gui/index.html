@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Liante AI - Inference Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --primary: #3b82f6;
+            --primary-glow: rgba(59, 130, 246, 0.5);
+            --bg: #0f172a;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --text: #f8fafc;
+            --text-dim: #94a3b8;
+            --success: #10b981;
+            --accent: #8b5cf6;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+
+        body {
+            background: radial-gradient(circle at top right, #1e1b4b, #0f172a);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 1.5rem 2rem;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -0.025em;
+            background: linear-gradient(to right, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 2rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+        }
+
+        h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-dim);
+        }
+
+        select, input {
+            width: 100%;
+            background: rgba(15, 23, 42, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: white;
+            font-size: 1rem;
+            transition: all 0.2s;
+        }
+
+        select:focus, input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 2px var(--primary-glow);
+        }
+
+        .btn-predict {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border: none;
+            border-radius: 0.75rem;
+            color: white;
+            font-weight: 700;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: transform 0.2s, opacity 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+
+        .btn-predict:hover {
+            transform: translateY(-2px);
+            opacity: 0.9;
+        }
+
+        .btn-predict:active {
+            transform: translateY(0);
+        }
+
+        .results-container {
+            display: grid;
+            grid-template-rows: auto 1fr;
+            gap: 1.5rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1.5rem;
+        }
+
+        .metric-card {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-dim);
+            margin-bottom: 0.5rem;
+        }
+
+        .metric-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: var(--success);
+        }
+
+        .chart-container {
+            position: relative;
+            background: rgba(15, 23, 42, 0.3);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            min-height: 400px;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            background: rgba(16, 185, 129, 0.1);
+            color: var(--success);
+            border: 1px solid rgba(16, 185, 129, 0.2);
+        }
+
+        #loading {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(4px);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            border-left-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .channel-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0.5rem;
+        }
+
+        .channel-btn {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--text-dim);
+            padding: 0.5rem;
+            border-radius: 0.4rem;
+            cursor: pointer;
+            font-size: 0.8rem;
+            transition: all 0.2s;
+        }
+
+        .channel-btn.active {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+    <div id="loading">
+        <div class="spinner"></div>
+        <p>Running Model Inference...</p>
+    </div>
+
+    <header>
+        <div class="logo">
+            <i data-lucide="cpu"></i>
+            Liante AI Dashboard
+        </div>
+        <div class="status-badge">
+            <i data-lucide="shield-check" style="width:14px; display:inline-block; vertical-align:middle; margin-right:4px;"></i>
+            Backend Active
+        </div>
+    </header>
+
+    <main>
+        <div class="sidebar">
+            <div class="card">
+                <h2><i data-lucide="settings-2"></i> Inference Config</h2>
+                
+                <div class="form-group">
+                    <label>Architecture</label>
+                    <select id="model-type">
+                        <option value="TransUNet1D">TransUNet1D (Transformer)</option>
+                        <option value="ResNet1D">ResNet1D (Residual)</option>
+                        <option value="UNet1D">UNet1D (Encoder-Decoder)</option>
+                        <option value="VGG1D">VGG1D (Deep CNN)</option>
+                        <option value="MLP">MLP (Baseline)</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Module Channel (0-7)</label>
+                    <div class="channel-grid" id="channel-picker">
+                        <button class="channel-btn active" data-val="0">CH 0</button>
+                        <button class="channel-btn" data-val="1">CH 1</button>
+                        <button class="channel-btn" data-val="2">CH 2</button>
+                        <button class="channel-btn" data-val="3">CH 3</button>
+                        <button class="channel-btn" data-val="4">CH 4</button>
+                        <button class="channel-btn" data-val="5">CH 5</button>
+                        <button class="channel-btn" data-val="6">CH 6</button>
+                        <button class="channel-btn" data-val="7">CH 7</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2><i data-lucide="bar-chart-3"></i> Feature Inputs (4D)</h2>
+                <div class="form-group">
+                    <label>Feature X1</label>
+                    <input type="number" step="0.001" value="1.573" id="f1">
+                </div>
+                <div class="form-group">
+                    <label>Feature X2</label>
+                    <input type="number" step="0.001" value="4.598" id="f2">
+                </div>
+                <div class="form-group">
+                    <label>Feature X3</label>
+                    <input type="number" step="0.001" value="1.439" id="f3">
+                </div>
+                <div class="form-group">
+                    <label>Feature X4</label>
+                    <input type="number" step="0.001" value="0.919" id="f4">
+                </div>
+
+                <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn-predict" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);" onclick="loadSample()">
+                        <i data-lucide="database"></i> Load Sample
+                    </button>
+                    <button class="btn-predict" onclick="runInference()">
+                        <i data-lucide="play"></i> Run Inference
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-container">
+            <div class="metrics-grid">
+                <div class="card metric-card">
+                    <div class="metric-label">Predicted EA</div>
+                    <div class="metric-value" id="res-ea">--</div>
+                </div>
+                <div class="card metric-card">
+                    <div class="metric-label">Predicted BIAS</div>
+                    <div class="metric-value" id="res-bias" style="color: var(--accent);">--</div>
+                </div>
+            </div>
+
+            <div class="card chart-container">
+                <h2><i data-lucide="line-chart"></i> Output Visualization</h2>
+                <canvas id="outputChart"></canvas>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        lucide.createIcons();
+        
+        let selectedChannel = 0;
+        const channelBtns = document.querySelectorAll('.channel-btn');
+        channelBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                channelBtns.forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                selectedChannel = parseInt(btn.dataset.val);
+            });
+        });
+
+        // Initialize Chart
+        const ctx = document.getElementById('outputChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: ['EA (Error)', 'BIAS (Shift)'],
+                datasets: [{
+                    label: 'Magnitude',
+                    data: [0, 0],
+                    backgroundColor: ['rgba(16, 185, 129, 0.6)', 'rgba(139, 92, 246, 0.6)'],
+                    borderColor: ['#10b981', '#8b5cf6'],
+                    borderWidth: 2,
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: 'rgba(255,255,255,0.05)' },
+                        ticks: { color: '#94a3b8' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8' }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        function loadSample() {
+            // Generates slightly randomized realistic values around the baseline
+            document.getElementById('f1').value = (1.5 + Math.random() * 0.2).toFixed(3);
+            document.getElementById('f2').value = (4.5 + Math.random() * 0.2).toFixed(3);
+            document.getElementById('f3').value = (1.4 + Math.random() * 0.1).toFixed(3);
+            document.getElementById('f4').value = (0.9 + Math.random() * 0.1).toFixed(3);
+            console.log("Sample data loaded");
+        }
+
+        async function runInference() {
+            const loading = document.getElementById('loading');
+            loading.style.display = 'flex';
+
+            const payload = {
+                model_type: document.getElementById('model-type').value,
+                channel: selectedChannel,
+                data: [[
+                    parseFloat(document.getElementById('f1').value),
+                    parseFloat(document.getElementById('f2').value),
+                    parseFloat(document.getElementById('f3').value),
+                    parseFloat(document.getElementById('f4').value)
+                ]]
+            };
+
+            try {
+                const response = await fetch('http://127.0.0.1:8000/predict', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok) throw new Error('Inference failed');
+
+                const result = await response.json();
+                const prediction = result.predictions[0];
+
+                document.getElementById('res-ea').innerText = prediction.ea.toFixed(4);
+                document.getElementById('res-bias').innerText = prediction.bias.toFixed(4);
+
+                // Update Chart
+                chart.data.datasets[0].data = [prediction.ea, prediction.bias];
+                chart.update();
+
+            } catch (err) {
+                alert('Error connecting to backend server: ' + err.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+__pycache__/
+*.pth
+*.mar
+*.pt
+model_store/
+saved_models/
+test_results/
+train_data/
+tmp_deploy/
+logs/
+automl/
+*.csv
+*.xlsx
+.vscode/

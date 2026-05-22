@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CopilotDiffPersistence">
+    <option name="pendingDiffs">
+      <map>
+        <entry key="$PROJECT_DIR$/inspect_lt.py">
+          <value>
+            <PendingDiffInfo>
+              <option name="filePath" value="$PROJECT_DIR$/inspect_lt.py" />
+              <option name="updatedContent" value="import pandas as pd&#10;import os&#10;&#10;def inspect_data(input_file='data_lt.csv'):&#10;    &quot;&quot;&quot;&#10;    Reads an Excel or CSV file and prints the first 20 rows to inspect its structure.&#10;    &quot;&quot;&quot;&#10;    try:&#10;        # Try reading as an Excel file first&#10;        df = pd.read_excel(input_file, header=None)&#10;        print(&quot;Successfully loaded as Excel. First 20 rows:&quot;)&#10;        print(df.head(20).to_string())&#10;    except Exception as e:&#10;        print(f&quot;Could not read as Excel, trying CSV: {e}&quot;)&#10;        try:&#10;            # If Excel fails, try reading as a CSV&#10;            df = pd.read_csv(input_file, encoding='utf-8', header=None)&#10;            print(&quot;Successfully loaded as CSV. First 20 rows:&quot;)&#10;            print(df.head(20).to_string())&#10;        except Exception as e2:&#10;            print(f&quot;Could not read as CSV: {e2}&quot;)&#10;            return&#10;&#10;if __name__ == '__main__':&#10;    script_dir = os.path.dirname(os.path.abspath(__file__))&#10;    input_path = os.path.join(script_dir, 'data_lt.csv')&#10;    inspect_data(input_path)&#10;" />
+            </PendingDiffInfo>
+          </value>
+        </entry>
+      </map>
+    </option>
+  </component>
+</project>
