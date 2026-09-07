@@ -8,7 +8,7 @@ test_results/
 train_data/
 tmp_deploy/
 logs/
-automl/
+automl/saved_models/
 *.csv
 *.xlsx
 .vscode/

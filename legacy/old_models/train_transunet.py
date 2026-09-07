@@ -9,32 +9,51 @@ from sklearn.metrics import mean_squared_error, r2_score
 import os
 import time
 
-class ResBlock1D(nn.Module):
-    def __init__(self, dim):
-        super(ResBlock1D, self).__init__()
-        self.fc1 = nn.Linear(dim, dim)
-        self.fc2 = nn.Linear(dim, dim)
-    def forward(self, x):
-        res = x
-        x = F.relu(self.fc1(x))
-        x = self.fc2(x)
-        return F.relu(x + res)
+from config import MODEL_DIR, PROJECT_ROOT, TRAIN_DATA_DIR
 
-class ResNet1D(nn.Module):
+class TransUNet1D(nn.Module):
     def __init__(self):
-        super(ResNet1D, self).__init__()
-        self.in_fc = nn.Linear(4, 64)
-        self.res1 = ResBlock1D(64)
-        self.res2 = ResBlock1D(64)
-        self.res3 = ResBlock1D(64)
-        self.out_fc = nn.Linear(64, 2)
+        super(TransUNet1D, self).__init__()
+        self.enc1 = nn.Conv1d(1, 16, kernel_size=3, padding=1) 
+        self.enc2 = nn.Conv1d(16, 32, kernel_size=3, padding=1) 
+        self.bottleneck = nn.Conv1d(32, 64, kernel_size=3, padding=1) 
+        
+        encoder_layer = nn.TransformerEncoderLayer(d_model=64, nhead=4, dim_feedforward=128, batch_first=True)
+        self.transformer = nn.TransformerEncoder(encoder_layer, num_layers=2)
+        
+        self.up1 = nn.ConvTranspose1d(64, 32, kernel_size=2, stride=2) 
+        self.dec1 = nn.Conv1d(64, 32, kernel_size=3, padding=1) 
+        
+        self.up2 = nn.ConvTranspose1d(32, 16, kernel_size=2, stride=2) 
+        self.dec2 = nn.Conv1d(32, 16, kernel_size=3, padding=1) 
+        
+        self.out_fc = nn.Linear(16 * 4, 2)
+
     def forward(self, x):
-        x = F.relu(self.in_fc(x))
-        x = self.res1(x)
-        x = self.res2(x)
-        x = self.res3(x)
-        x = self.out_fc(x)
-        return x
+        x = x.unsqueeze(1)
+        e1 = F.relu(self.enc1(x)) 
+        p1 = F.max_pool1d(e1, 2) 
+        
+        e2 = F.relu(self.enc2(p1)) 
+        p2 = F.max_pool1d(e2, 2) 
+        
+        b = F.relu(self.bottleneck(p2))
+        
+        b_t = b.permute(0, 2, 1)
+        t_out = self.transformer(b_t)
+        t_out = t_out.permute(0, 2, 1)
+        
+        d1 = self.up1(t_out) 
+        c1 = torch.cat([d1, e2], dim=1) 
+        d1 = F.relu(self.dec1(c1)) 
+        
+        d2 = self.up2(d1) 
+        c2 = torch.cat([d2, e1], dim=1) 
+        d2 = F.relu(self.dec2(c2)) 
+        
+        d2_flat = d2.view(d2.size(0), -1) 
+        out = self.out_fc(d2_flat)
+        return out
 
 def tune_and_train(model_name, model_class, X_train, y_train, X_test, y_test, scaler_y, save_path, pred_path):
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -71,6 +90,7 @@ def tune_and_train(model_name, model_class, X_train, y_train, X_test, y_test, sc
             
         if val_loss < best_loss:
             best_loss = val_loss
+            # CPU deepcopy state dict
             best_state_dict = {k: v.cpu().clone() for k, v in model.state_dict().items()}
             best_lr = lr
             best_preds = test_preds.cpu().numpy()
@@ -80,7 +100,7 @@ def tune_and_train(model_name, model_class, X_train, y_train, X_test, y_test, sc
     best_model.load_state_dict(best_state_dict)
     best_model.eval()
 
-    # 压测 QPS (每秒查询次数)
+    # 压测 QPS
     iters = 1000
     start_time = time.perf_counter()
     with torch.no_grad():
@@ -115,19 +135,18 @@ def tune_and_train(model_name, model_class, X_train, y_train, X_test, y_test, sc
     print(f"{model_name:<12s} - 最佳Lr: {best_lr} | QPS: {qps:.0f} 条/秒 | MSE(ea) {mse_ea:7.2f}, R2(ea) {r2_ea:6.4f} | MSE(b) {mse_bias:7.2f}, R2(b) {r2_bias:6.4f}")
 
 def main():
-    base_dir = r"F:/npfcode/liante/train_data/data_v5/split_by_channel"
-    save_dir = r"F:/npfcode/liante/saved_models"
-    pred_dir = r"F:/npfcode/liante/tuned_predictions"
+    base_dir = str(TRAIN_DATA_DIR)
+    save_dir = str(MODEL_DIR)
+    pred_dir = str(PROJECT_ROOT / "tuned_predictions")
     os.makedirs(save_dir, exist_ok=True)
     os.makedirs(pred_dir, exist_ok=True)
-    print(f"所有预测结果将保存在新建文件夹: {pred_dir}")
     
     for channel_id in range(8):
         inputfile = os.path.join(base_dir, f"channel_{channel_id}_ea.csv")
         if not os.path.exists(inputfile):
             continue
             
-        print(f"\n======== ResNet 调参 & 压测 - Channel {channel_id} ========")
+        print(f"\n======== TransUNet 调参 & 压测 - Channel {channel_id} ========")
         try:
             data = pd.read_csv(inputfile, encoding='latin1')
         except:
@@ -156,9 +175,9 @@ def main():
         y_train_scaled = scaler_y.fit_transform(y_train_raw)
         y_test_scaled = scaler_y.transform(y_test_raw)
 
-        save_path = os.path.join(save_dir, f"ResNet1D_channel_{channel_id}.pth")
-        pred_path = os.path.join(pred_dir, f"ResNet1D_channel_{channel_id}.csv")
-        tune_and_train("ResNet1D", ResNet1D, X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled, scaler_y, save_path, pred_path)
+        save_path = os.path.join(save_dir, f"TransUNet1D_channel_{channel_id}.pth")
+        pred_path = os.path.join(pred_dir, f"TransUNet1D_channel_{channel_id}.csv")
+        tune_and_train("TransUNet1D", TransUNet1D, X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled, scaler_y, save_path, pred_path)
 
 if __name__ == '__main__':
     main()

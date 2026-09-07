@@ -267,6 +267,7 @@
             <i data-lucide="cpu"></i>
             Liante AI Dashboard
         </div>
+        <a href="/gui/train.html" style="color:#a9c1ff;text-decoration:none;font-weight:700;">MLP AutoML 训练 →</a>
         <div class="status-badge">
             <i data-lucide="shield-check" style="width:14px; display:inline-block; vertical-align:middle; margin-right:4px;"></i>
             Backend Active
@@ -280,13 +281,7 @@
                 
                 <div class="form-group">
                     <label>Architecture</label>
-                    <select id="model-type">
-                        <option value="TransUNet1D">TransUNet1D (Transformer)</option>
-                        <option value="ResNet1D">ResNet1D (Residual)</option>
-                        <option value="UNet1D">UNet1D (Encoder-Decoder)</option>
-                        <option value="VGG1D">VGG1D (Deep CNN)</option>
-                        <option value="MLP">MLP (Baseline)</option>
-                    </select>
+                    <input value="MLP（每个 Channel 自动加载当前最佳模型）" disabled>
                 </div>
 
                 <div class="form-group">
@@ -332,6 +327,17 @@
                     </button>
                 </div>
             </div>
+
+            <div class="card">
+                <h2><i data-lucide="file-spreadsheet"></i> File Prediction</h2>
+                <div class="form-group">
+                    <label>CSV/XLSX path on the Flask server</label>
+                    <input type="text" id="file-path" placeholder="D:/data/predict.xlsx">
+                </div>
+                <button class="btn-predict" onclick="runFileInference()">
+                    <i data-lucide="folder-input"></i> Predict File
+                </button>
+            </div>
         </div>
 
         <div class="results-container">
@@ -349,6 +355,11 @@
             <div class="card chart-container">
                 <h2><i data-lucide="line-chart"></i> Output Visualization</h2>
                 <canvas id="outputChart"></canvas>
+            </div>
+
+            <div class="card">
+                <h2><i data-lucide="table-2"></i> File Results</h2>
+                <pre id="file-results" style="max-height: 320px; overflow: auto; color: var(--text-dim); white-space: pre-wrap;">No file prediction yet.</pre>
             </div>
         </div>
     </main>
@@ -410,12 +421,18 @@
             console.log("Sample data loaded");
         }
 
+        function showPrediction(prediction) {
+            document.getElementById('res-ea').innerText = prediction.ea.toFixed(4);
+            document.getElementById('res-bias').innerText = prediction.bias.toFixed(4);
+            chart.data.datasets[0].data = [prediction.ea, prediction.bias];
+            chart.update();
+        }
+
         async function runInference() {
             const loading = document.getElementById('loading');
             loading.style.display = 'flex';
 
             const payload = {
-                model_type: document.getElementById('model-type').value,
                 channel: selectedChannel,
                 data: [[
                     parseFloat(document.getElementById('f1').value),
@@ -426,7 +443,7 @@
             };
 
             try {
-                const response = await fetch('http://127.0.0.1:8000/predict', {
+                const response = await fetch('/predict', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(payload)
@@ -435,17 +452,41 @@
                 if (!response.ok) throw new Error('Inference failed');
 
                 const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'Prediction failed');
                 const prediction = result.predictions[0];
 
-                document.getElementById('res-ea').innerText = prediction.ea.toFixed(4);
-                document.getElementById('res-bias').innerText = prediction.bias.toFixed(4);
-
-                // Update Chart
-                chart.data.datasets[0].data = [prediction.ea, prediction.bias];
-                chart.update();
+                showPrediction(prediction);
 
             } catch (err) {
                 alert('Error connecting to backend server: ' + err.message);
+            } finally {
+                loading.style.display = 'none';
+            }
+        }
+
+        async function runFileInference() {
+            const loading = document.getElementById('loading');
+            const filePath = document.getElementById('file-path').value.trim();
+            if (!filePath) {
+                alert('Please enter a CSV/XLSX path accessible to the Flask server.');
+                return;
+            }
+            loading.style.display = 'flex';
+            try {
+                const response = await fetch('/predict-file', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        channel: selectedChannel,
+                        file_path: filePath
+                    })
+                });
+                const result = await response.json();
+                if (!response.ok) throw new Error(result.error || 'File prediction failed');
+                showPrediction(result.predictions[0]);
+                document.getElementById('file-results').innerText = JSON.stringify(result.predictions, null, 2);
+            } catch (err) {
+                alert('File prediction error: ' + err.message);
             } finally {
                 loading.style.display = 'none';
             }

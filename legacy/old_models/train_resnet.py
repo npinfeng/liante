@@ -9,19 +9,33 @@ from sklearn.metrics import mean_squared_error, r2_score
 import os
 import time
 
-class MLP(nn.Module):
-    def __init__(self):
-        super(MLP, self).__init__()
-        self.fc1 = nn.Linear(4, 64)
-        self.fc2 = nn.Linear(64, 16)
-        self.fc3 = nn.Linear(16, 2)
-        self.fc4 = nn.Linear(2, 2)
+from config import MODEL_DIR, PROJECT_ROOT, TRAIN_DATA_DIR
 
+class ResBlock1D(nn.Module):
+    def __init__(self, dim):
+        super(ResBlock1D, self).__init__()
+        self.fc1 = nn.Linear(dim, dim)
+        self.fc2 = nn.Linear(dim, dim)
     def forward(self, x):
-        x = torch.tanh(self.fc1(x))
-        x = torch.tanh(self.fc2(x))
-        x = torch.tanh(self.fc3(x))
-        x = self.fc4(x)
+        res = x
+        x = F.relu(self.fc1(x))
+        x = self.fc2(x)
+        return F.relu(x + res)
+
+class ResNet1D(nn.Module):
+    def __init__(self):
+        super(ResNet1D, self).__init__()
+        self.in_fc = nn.Linear(4, 64)
+        self.res1 = ResBlock1D(64)
+        self.res2 = ResBlock1D(64)
+        self.res3 = ResBlock1D(64)
+        self.out_fc = nn.Linear(64, 2)
+    def forward(self, x):
+        x = F.relu(self.in_fc(x))
+        x = self.res1(x)
+        x = self.res2(x)
+        x = self.res3(x)
+        x = self.out_fc(x)
         return x
 
 def tune_and_train(model_name, model_class, X_train, y_train, X_test, y_test, scaler_y, save_path, pred_path):
@@ -59,7 +73,6 @@ def tune_and_train(model_name, model_class, X_train, y_train, X_test, y_test, sc
             
         if val_loss < best_loss:
             best_loss = val_loss
-            # CPU deepcopy state dict
             best_state_dict = {k: v.cpu().clone() for k, v in model.state_dict().items()}
             best_lr = lr
             best_preds = test_preds.cpu().numpy()
@@ -69,7 +82,7 @@ def tune_and_train(model_name, model_class, X_train, y_train, X_test, y_test, sc
     best_model.load_state_dict(best_state_dict)
     best_model.eval()
 
-    # 压测 QPS
+    # 压测 QPS (每秒查询次数)
     iters = 1000
     start_time = time.perf_counter()
     with torch.no_grad():
@@ -104,18 +117,19 @@ def tune_and_train(model_name, model_class, X_train, y_train, X_test, y_test, sc
     print(f"{model_name:<12s} - 最佳Lr: {best_lr} | QPS: {qps:.0f} 条/秒 | MSE(ea) {mse_ea:7.2f}, R2(ea) {r2_ea:6.4f} | MSE(b) {mse_bias:7.2f}, R2(b) {r2_bias:6.4f}")
 
 def main():
-    base_dir = r"F:/npfcode/liante/train_data/data_v5/split_by_channel"
-    save_dir = r"F:/npfcode/liante/saved_models"
-    pred_dir = r"F:/npfcode/liante/tuned_predictions"
+    base_dir = str(TRAIN_DATA_DIR)
+    save_dir = str(MODEL_DIR)
+    pred_dir = str(PROJECT_ROOT / "tuned_predictions")
     os.makedirs(save_dir, exist_ok=True)
     os.makedirs(pred_dir, exist_ok=True)
+    print(f"所有预测结果将保存在新建文件夹: {pred_dir}")
     
     for channel_id in range(8):
         inputfile = os.path.join(base_dir, f"channel_{channel_id}_ea.csv")
         if not os.path.exists(inputfile):
             continue
             
-        print(f"\n======== MLP 调参 & 压测 - Channel {channel_id} ========")
+        print(f"\n======== ResNet 调参 & 压测 - Channel {channel_id} ========")
         try:
             data = pd.read_csv(inputfile, encoding='latin1')
         except:
@@ -144,9 +158,9 @@ def main():
         y_train_scaled = scaler_y.fit_transform(y_train_raw)
         y_test_scaled = scaler_y.transform(y_test_raw)
 
-        save_path = os.path.join(save_dir, f"MLP_channel_{channel_id}.pth")
-        pred_path = os.path.join(pred_dir, f"MLP_channel_{channel_id}.csv")
-        tune_and_train("MLP", MLP, X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled, scaler_y, save_path, pred_path)
+        save_path = os.path.join(save_dir, f"ResNet1D_channel_{channel_id}.pth")
+        pred_path = os.path.join(pred_dir, f"ResNet1D_channel_{channel_id}.csv")
+        tune_and_train("ResNet1D", ResNet1D, X_train_scaled, y_train_scaled, X_test_scaled, y_test_scaled, scaler_y, save_path, pred_path)
 
 if __name__ == '__main__':
     main()

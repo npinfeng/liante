@@ -1,10 +1,12 @@
 import pandas as pd
 import os
+from pathlib import Path
 
 # ================= 配置 =================
-train_data_file = r'F:\npfcode\liante\train_data\data_v5\训练数据1.csv'
-merged_data_file = r'F:\npfcode\liante\predict_data_result\merged_all_channels.csv'
-output_file = r'F:\npfcode\liante\predict_data_result\merged_ordered_by_train_data.csv'
+PROJECT_ROOT = Path(__file__).resolve().parent
+train_data_file = PROJECT_ROOT / "train_data" / "data_v5" / "训练数据1.csv"
+merged_data_file = PROJECT_ROOT / "predict_data_result" / "merged_all_channels.csv"
+output_file = PROJECT_ROOT / "predict_data_result" / "merged_ordered_by_train_data.csv"
 # =======================================
 
 print("=== 按训练数据1的SN顺序重新整理Merged数据 ===\n")
