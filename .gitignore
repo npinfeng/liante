@@ -11,5 +11,4 @@ logs/
 automl/saved_models/
 *.csv
 *.xlsx
-saved_models/
 .vscode/
