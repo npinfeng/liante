@@ -26,7 +26,7 @@ from automl.search_space import (
 from models.mlp import DynamicMLP
 from schemas.training import SearchSpace
 from training.data_loader import PreparedChannelData, load_channel_data
-from training.trainer import fit_fixed_epochs, train_with_early_stopping
+from training.trainer import train_with_early_stopping
 
 
 LOGGER = logging.getLogger(__name__)
@@ -74,7 +74,9 @@ def regression_metrics(actual: np.ndarray, predicted: np.ndarray) -> dict[str, A
     return {
         "ea": _metric_block(actual[:, 0], predicted[:, 0]),
         "bias": _metric_block(actual[:, 1], predicted[:, 1]),
-        "overall": _metric_block(actual.reshape(-1), predicted.reshape(-1)),
+        # Keep outputs separate when computing R2. Flattening mixes the very
+        # different ea/bias levels and can create a meaningless value near 1.
+        "overall": _metric_block(actual, predicted),
     }
 
 
@@ -120,6 +122,12 @@ class MLPAutoMLTrainer:
             n_startup_trials=min(5, n_trials), n_warmup_steps=min(10, max_epochs // 2)
         )
         study = optuna.create_study(direction="minimize", sampler=sampler, pruner=pruner)
+        best_checkpoint: dict[str, Any] = {
+            "loss": float("inf"),
+            "trial_number": None,
+            "trial_seed": None,
+            "state_dict": None,
+        }
 
         def objective(trial: optuna.Trial) -> float:
             trial_seed = random_seed + trial.number
@@ -172,6 +180,13 @@ class MLPAutoMLTrainer:
                     progress_callback=report_epoch,
                 )
                 trial.set_user_attr("best_epoch", outcome.best_epoch)
+                if outcome.best_validation_loss < best_checkpoint["loss"]:
+                    best_checkpoint.update(
+                        loss=outcome.best_validation_loss,
+                        trial_number=trial.number,
+                        trial_seed=trial_seed,
+                        state_dict=outcome.state_dict,
+                    )
                 LOGGER.info(
                     "channel=%s trial=%s validation_loss=%.8f params=%s",
                     channel,
@@ -197,34 +212,38 @@ class MLPAutoMLTrainer:
         best_params = params_from_trial(best_trial)
         model_config = model_config_from_params(best_params)
         best_epoch = max(1, int(best_trial.user_attrs.get("best_epoch", max_epochs)))
+        if (
+            best_checkpoint["state_dict"] is None
+            or best_checkpoint["trial_number"] != best_trial.number
+        ):
+            raise RuntimeError("最佳 trial 权重未能正确保留")
         callback(
             status="retraining",
             current_trial=n_trials,
             total_trials=n_trials,
             progress=90,
             best_score=float(best_trial.value),
-            message=f"使用最佳配置重训练 Channel {channel}",
+            message=f"恢复 Channel {channel} 最佳 trial 权重",
         )
 
-        set_random_seed(random_seed)
+        # Persist the exact checkpoint that produced study.best_value. The old
+        # implementation discarded it and evaluated a newly initialized model,
+        # so validation and test metrics referred to different trained models.
         final_model = DynamicMLP(model_config).to(self.device)
-        optimizer = build_optimizer(final_model, best_params)
-        x_train_val = np.concatenate([data.x_train, data.x_val], axis=0)
-        y_train_val = np.concatenate([data.y_train, data.y_val], axis=0)
-        fit_fixed_epochs(
-            final_model,
-            optimizer,
-            str(best_params["scheduler"]),
-            x_train_val,
-            y_train_val,
-            batch_size=int(best_params["batch_size"]),
-            epochs=best_epoch,
-            seed=random_seed,
-            device=self.device,
+        final_model.load_state_dict(best_checkpoint["state_dict"])
+        final_model.eval()
+
+        with torch.inference_mode():
+            scaled_validation_predictions = final_model(
+                torch.as_tensor(data.x_val, dtype=torch.float32, device=self.device)
+            ).cpu().numpy()
+        validation_predictions = data.scaler_y.inverse_transform(
+            scaled_validation_predictions
         )
+        validation_actual = data.scaler_y.inverse_transform(data.y_val)
+        validation_metrics = regression_metrics(validation_actual, validation_predictions)
 
         callback(status="evaluating", progress=95, message=f"评估 Channel {channel} 独立测试集")
-        final_model.eval()
         with torch.inference_mode():
             scaled_predictions = final_model(
                 torch.as_tensor(data.x_test, dtype=torch.float32, device=self.device)
@@ -241,8 +260,11 @@ class MLPAutoMLTrainer:
             model_config=model_config.to_dict(include_model_type=True),
             best_params=best_params,
             metrics=metrics,
+            validation_metrics=validation_metrics,
             validation_mse=float(best_trial.value),
             best_epoch=best_epoch,
+            best_trial_number=best_trial.number,
+            best_trial_seed=int(best_checkpoint["trial_seed"]),
             n_trials=n_trials,
             max_epochs=max_epochs,
             patience=patience,
@@ -250,7 +272,6 @@ class MLPAutoMLTrainer:
             training_time=training_time,
             study=study,
         )
-        del optimizer
         del final_model
         gc.collect()
         if self.device.type == "cuda":
@@ -261,8 +282,11 @@ class MLPAutoMLTrainer:
             "best_params": best_params,
             "model_config": model_config.to_dict(include_model_type=True),
             "metrics": metrics,
+            "validation_metrics": validation_metrics,
             "validation_mse": float(best_trial.value),
             "best_epoch": best_epoch,
+            "best_trial_number": best_trial.number,
+            "best_trial_seed": int(best_checkpoint["trial_seed"]),
             "training_time": training_time,
             "model_path": str(artifact_dir / "model.pth"),
             "artifact_dir": str(artifact_dir),
@@ -285,8 +309,11 @@ class MLPAutoMLTrainer:
         model_config: dict[str, Any],
         best_params: dict[str, Any],
         metrics: dict[str, Any],
+        validation_metrics: dict[str, Any],
         validation_mse: float,
         best_epoch: int,
+        best_trial_number: int,
+        best_trial_seed: int,
         n_trials: int,
         max_epochs: int,
         patience: int,
@@ -312,13 +339,21 @@ class MLPAutoMLTrainer:
         _write_json(
             artifact_dir / "training_metadata.json",
             {
-                "format_version": 2,
+                "format_version": 3,
                 "model_type": "MLP",
                 "channel": channel,
                 "objective": "validation_mse_scaled",
+                "training_loss": "huber_scaled_delta_1",
+                "final_model_strategy": "best_trial_checkpoint",
                 "validation_mse": validation_mse,
+                "validation_metrics": validation_metrics,
                 "best_params": best_params,
                 "best_epoch": best_epoch,
+                "best_trial_number": best_trial_number,
+                "best_trial_seed": best_trial_seed,
+                "model_parameter_count": sum(
+                    parameter.numel() for parameter in model.parameters()
+                ),
                 "n_trials": n_trials,
                 "completed_trials": sum(
                     trial.state == optuna.trial.TrialState.COMPLETE for trial in study.trials

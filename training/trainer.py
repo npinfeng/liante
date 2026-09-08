@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import copy
 import logging
 from dataclasses import dataclass
 from typing import Callable
@@ -94,7 +93,9 @@ def train_with_early_stopping(
     model.to(device)
     loader = make_data_loader(x_train, y_train, batch_size, seed)
     scheduler = make_scheduler(scheduler_name, optimizer, max_epochs)
-    criterion = nn.MSELoss()
+    # Huber loss limits the influence of the few extreme target values present
+    # in some Channels while remaining quadratic for ordinary residuals.
+    criterion = nn.HuberLoss(delta=1.0)
     best_loss = float("inf")
     best_epoch = 0
     best_state: dict[str, torch.Tensor] | None = None
@@ -119,7 +120,11 @@ def train_with_early_stopping(
         if validation_loss < best_loss - 1e-10:
             best_loss = validation_loss
             best_epoch = epoch
-            best_state = copy.deepcopy(model.state_dict())
+            # Keep checkpoints on CPU so completed trials release GPU memory.
+            best_state = {
+                name: value.detach().cpu().clone()
+                for name, value in model.state_dict().items()
+            }
             epochs_without_improvement = 0
         else:
             epochs_without_improvement += 1
@@ -162,7 +167,7 @@ def fit_fixed_epochs(
     model.to(device)
     loader = make_data_loader(features, targets, batch_size, seed)
     scheduler = make_scheduler(scheduler_name, optimizer, epochs)
-    criterion = nn.MSELoss()
+    criterion = nn.HuberLoss(delta=1.0)
     for _ in range(epochs):
         model.train()
         running_loss = 0.0

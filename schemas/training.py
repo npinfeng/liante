@@ -15,15 +15,17 @@ SUPPORTED_HIDDEN_SIZES = {32, 64, 128, 256, 512}
 class SearchSpace(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    n_layers: tuple[int, int] = (1, 5)
-    hidden_sizes: list[int] = [32, 64, 128, 256, 512]
-    activations: list[str] = ["relu", "gelu", "silu", "tanh"]
-    dropout: tuple[float, float] = (0.0, 0.5)
-    batch_norm: list[bool] = [True, False]
-    optimizers: list[str] = ["Adam", "AdamW", "SGD"]
-    learning_rate: tuple[float, float] = (1e-5, 1e-2)
-    weight_decay: tuple[float, float] = (1e-6, 1e-2)
-    batch_sizes: list[int] = [16, 32, 64, 128, 256]
+    # Channel datasets commonly contain only a few hundred rows. Keep the
+    # defaults conservative; the advanced API can still opt into wider ranges.
+    n_layers: tuple[int, int] = (1, 3)
+    hidden_sizes: list[int] = [32, 64, 128]
+    activations: list[str] = ["relu", "gelu", "silu"]
+    dropout: tuple[float, float] = (0.05, 0.30)
+    batch_norm: list[bool] = [False]
+    optimizers: list[str] = ["Adam", "AdamW"]
+    learning_rate: tuple[float, float] = (1e-4, 3e-3)
+    weight_decay: tuple[float, float] = (1e-6, 1e-3)
+    batch_sizes: list[int] = [16, 32, 64]
     schedulers: list[str] = ["none", "cosine", "plateau"]
 
     @model_validator(mode="after")
@@ -104,4 +106,3 @@ class TrainAllRequest(BaseModel):
         if max_epochs is not None and value > max_epochs:
             return max_epochs
         return value
-

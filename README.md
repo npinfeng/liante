@@ -1,5 +1,7 @@
 # Liante MLP AutoML
 
+在另一台 Windows 电脑上使用真实数据进行环境安装、数据检查、冒烟训练、正式训练和结果验收，请参阅 [实际运行与训练指南](docs/RUNNING_AND_TRAINING_CN.md)。
+
 Liante 现在是一个 **仅优化 MLP** 的多输出回归系统。模型类型固定为 MLP；Optuna 的职责是为每个 Channel 独立寻找隐藏层数量、每层宽度以及训练超参数。系统使用 Flask 提供异步训练、状态查询和预测接口。
 
 ## 核心链路
@@ -9,8 +11,8 @@ Channel CSV
   → 顺序划分 Train / Validation / Test（70% / 15% / 15%）
   → 仅在 Train 上拟合 StandardScaler
   → Optuna 搜索 DynamicMLP + 训练超参数
-  → Early Stopping + Optuna Pruning
-  → 使用最佳 epoch 在 Train + Validation 上重训练
+  → Huber Loss + Early Stopping + Optuna Pruning
+  → 保留产生最佳 Validation 指标的原始 trial 权重
   → 独立 Test 评估
   → 保存模型、配置、Scaler、指标和训练元数据
   → Flask 动态重建 DynamicMLP
@@ -28,7 +30,7 @@ liante/
 ├── models/
 │   └── mlp.py                  # 唯一权威 DynamicMLP
 ├── automl/
-│   ├── mlp_trainer.py          # Optuna、重训练、评估、artifact 保存
+│   ├── mlp_trainer.py          # Optuna、最佳权重恢复、评估、artifact 保存
 │   └── search_space.py         # MLP-only 搜索空间
 ├── training/
 │   ├── data_loader.py          # 无泄漏数据划分和标准化
@@ -68,18 +70,18 @@ python backend_server.py
 
 ## AutoML 搜索空间
 
-- `n_layers`: 1–5
-- 每层 `hidden_i`: 32 / 64 / 128 / 256 / 512，互相独立
-- `activation`: relu / gelu / silu / tanh
-- `dropout`: 0.0–0.5
-- `batch_norm`: true / false
-- `optimizer`: Adam / AdamW / SGD；SGD 额外搜索 momentum
-- `learning_rate`: 1e-5–1e-2，对数采样
-- `weight_decay`: 1e-6–1e-2，对数采样
-- `batch_size`: 16 / 32 / 64 / 128 / 256
+- `n_layers`: 1–3
+- 每层 `hidden_i`: 32 / 64 / 128，互相独立
+- `activation`: relu / gelu / silu
+- `dropout`: 0.05–0.30
+- `batch_norm`: 默认关闭
+- `optimizer`: Adam / AdamW
+- `learning_rate`: 1e-4–3e-3，对数采样
+- `weight_decay`: 1e-6–1e-3，对数采样
+- `batch_size`: 16 / 32 / 64
 - `scheduler`: none / cosine / plateau
 
-默认 Optuna objective 为标准化目标上的 validation MSE，方向为 minimize。Test 不参与任何参数选择。
+默认值针对每个 Channel 只有数百行数据的场景收紧；高级 API 仍允许显式传入更宽的合法范围。训练损失使用标准化目标上的 Huber Loss，Optuna objective 为 validation MSE，方向为 minimize。Test 不参与任何参数选择。
 
 ## API
 
@@ -134,7 +136,7 @@ saved_models/channel_0/
 └── training_metadata.json
 ```
 
-`metrics.json` 包含 ea、bias 和 overall 的 MSE、RMSE、MAE、R²。预测端读取配置后构造完全一致的 `DynamicMLP`，再加载权重和两个 Scaler。
+`metrics.json` 包含 ea、bias 和 overall 的 MSE、RMSE、MAE、R²；overall R² 对两个输出进行等权平均，不再将不同量纲的目标展平混算。`training_metadata.json` 还记录 ea/bias 各自的验证指标、最佳 trial 编号与种子、参数量以及最终权重策略。预测端读取配置后构造完全一致的 `DynamicMLP`，再加载权重和两个 Scaler。
 
 ## CLI 与测试
 
