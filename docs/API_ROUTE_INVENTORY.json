@@ -1,0 +1,833 @@
+{
+  "count": 62,
+  "routes": [
+    {
+      "method": "GET",
+      "path": "/",
+      "endpoint": "root",
+      "blueprint": "",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "backend_server.py",
+      "line": 299,
+      "operation_id": "root_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/drain",
+      "endpoint": "begin_drain",
+      "blueprint": "",
+      "auth": [
+        "admin"
+      ],
+      "source": "backend_server.py",
+      "line": 261,
+      "operation_id": "begin_drain_post"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/aoi/folder-runs",
+      "endpoint": "api_v1.start_aoi_folder_run",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api_v1.py",
+      "line": 493,
+      "operation_id": "api_v1_start_aoi_folder_run_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/aoi/folder-runs/{task_id}",
+      "endpoint": "api_v1.aoi_folder_run_status",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api_v1.py",
+      "line": 512,
+      "operation_id": "api_v1_aoi_folder_run_status_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/aoi/streams",
+      "endpoint": "api_v1.start_aoi_stream",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 474,
+      "operation_id": "api_v1_start_aoi_stream_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/aoi/streams/{task_id}",
+      "endpoint": "api_v1.aoi_stream_status",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 538,
+      "operation_id": "api_v1_aoi_stream_status_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/aoi/streams/{task_id}/close",
+      "endpoint": "api_v1.close_aoi_stream",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 586,
+      "operation_id": "api_v1_close_aoi_stream_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/aoi/streams/{task_id}/frames",
+      "endpoint": "api_v1.aoi_frame_records",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 551,
+      "operation_id": "api_v1_aoi_frame_records_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/aoi/streams/{task_id}/frames",
+      "endpoint": "api_v1.push_aoi_frame",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 519,
+      "operation_id": "api_v1_push_aoi_frame_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/aoi/streams/{task_id}/frames/{sequence}/image",
+      "endpoint": "api_v1.aoi_frame_image",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 562,
+      "operation_id": "api_v1_aoi_frame_image_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/aoi/streams/{task_id}/latest-frame",
+      "endpoint": "api_v1.latest_aoi_frame",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 575,
+      "operation_id": "api_v1_latest_aoi_frame_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/aoi/streams/{task_id}/products",
+      "endpoint": "operations.stream_products",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 115,
+      "operation_id": "operations_stream_products_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/aoi/streams/{task_id}/products",
+      "endpoint": "operations.open_product",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 109,
+      "operation_id": "operations_open_product_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/aoi/streams/{task_id}/products/{product_id}",
+      "endpoint": "operations.stream_product",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 121,
+      "operation_id": "operations_stream_product_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/aoi/streams/{task_id}/products/{product_id}/close",
+      "endpoint": "operations.close_product",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 126,
+      "operation_id": "operations_close_product_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exports/products/{product_id}/trace.json",
+      "endpoint": "operations.export_trace",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 233,
+      "operation_id": "operations_export_trace_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exports/qualifications/{qualification_id}.json",
+      "endpoint": "operations.export_qualification",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 228,
+      "operation_id": "operations_export_qualification_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exports/tasks.csv",
+      "endpoint": "operations.export_tasks",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 213,
+      "operation_id": "operations_export_tasks_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/exports/tasks/{task_id}/predictions.csv",
+      "endpoint": "operations.export_predictions",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 219,
+      "operation_id": "operations_export_predictions_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/health",
+      "endpoint": "api_v1.health",
+      "blueprint": "api_v1",
+      "auth": [
+        "public"
+      ],
+      "source": "api_v1.py",
+      "line": 113,
+      "operation_id": "api_v1_health_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/inference/aoi",
+      "endpoint": "api_v1.aoi",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api_v1.py",
+      "line": 407,
+      "operation_id": "api_v1_aoi_post"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/inference/ea-bias",
+      "endpoint": "api_v1.ea_bias",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api_v1.py",
+      "line": 376,
+      "operation_id": "api_v1_ea_bias_post"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/inference/ea-bias/folder",
+      "endpoint": "api_v1.predict_stage2_folder",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 301,
+      "operation_id": "api_v1_predict_stage2_folder_post"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/inference/ea-bias/scan",
+      "endpoint": "api_v1.scan_stage2_folder",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 288,
+      "operation_id": "api_v1_scan_stage2_folder_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/inference/ea-bias/sources",
+      "endpoint": "api_v1.stage2_sources",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 214,
+      "operation_id": "api_v1_stage2_sources_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/inference/ea-bias/sources",
+      "endpoint": "api_v1.configure_stage2_source",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 247,
+      "operation_id": "api_v1_configure_stage2_source_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/inference/ea-bias/sources/{source_id}/logs",
+      "endpoint": "api_v1.stage2_source_logs",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 267,
+      "operation_id": "api_v1_stage2_source_logs_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/inference/grading",
+      "endpoint": "api_v1.grading",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 593,
+      "operation_id": "api_v1_grading_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/live",
+      "endpoint": "operations.live",
+      "blueprint": "operations",
+      "auth": [
+        "public"
+      ],
+      "source": "api\\operations.py",
+      "line": 43,
+      "operation_id": "operations_live_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/models",
+      "endpoint": "api_v1.models",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api_v1.py",
+      "line": 124,
+      "operation_id": "api_v1_models_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/{product_id}/qualifications",
+      "endpoint": "operations.product_qualifications",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 134,
+      "operation_id": "operations_product_qualifications_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/products/{product_id}/trace",
+      "endpoint": "operations.product_trace",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 199,
+      "operation_id": "operations_product_trace_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/qualifications",
+      "endpoint": "operations.qualification_history",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 129,
+      "operation_id": "operations_qualification_history_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/qualifications",
+      "endpoint": "api_v1.create_qualification",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api_v1.py",
+      "line": 653,
+      "operation_id": "api_v1_create_qualification_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/qualifications/{qualification_id}",
+      "endpoint": "api_v1.get_qualification",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 670,
+      "operation_id": "api_v1_get_qualification_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/qualifications/{qualification_id}/history",
+      "endpoint": "operations.evidence_history",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 152,
+      "operation_id": "operations_evidence_history_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/qualifications/{qualification_id}/replace",
+      "endpoint": "operations.replace",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api\\operations.py",
+      "line": 144,
+      "operation_id": "operations_replace_post"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/qualifications/{qualification_id}/revoke",
+      "endpoint": "operations.revoke",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api\\operations.py",
+      "line": 139,
+      "operation_id": "operations_revoke_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ready",
+      "endpoint": "api_v1.ready",
+      "blueprint": "api_v1",
+      "auth": [
+        "public"
+      ],
+      "source": "api_v1.py",
+      "line": 117,
+      "operation_id": "api_v1_ready_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/ready/{stage}",
+      "endpoint": "operations.stage_ready",
+      "blueprint": "operations",
+      "auth": [
+        "public"
+      ],
+      "source": "api\\operations.py",
+      "line": 46,
+      "operation_id": "operations_stage_ready_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reviews",
+      "endpoint": "operations.review_list",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api\\operations.py",
+      "line": 161,
+      "operation_id": "operations_review_list_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/reviews",
+      "endpoint": "operations.create_review",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api\\operations.py",
+      "line": 158,
+      "operation_id": "operations_create_review_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/reviews/{review_id}",
+      "endpoint": "operations.review_get",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api\\operations.py",
+      "line": 166,
+      "operation_id": "operations_review_get_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/system/info",
+      "endpoint": "operations.system_info",
+      "blueprint": "operations",
+      "auth": [
+        "admin"
+      ],
+      "source": "api\\operations.py",
+      "line": 55,
+      "operation_id": "operations_system_info_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tasks",
+      "endpoint": "operations.task_history",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 75,
+      "operation_id": "operations_task_history_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tasks",
+      "endpoint": "api_v1.create_task",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "api_v1.py",
+      "line": 136,
+      "operation_id": "api_v1_create_task_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}",
+      "endpoint": "api_v1.task",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 147,
+      "operation_id": "api_v1_task_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/cancel",
+      "endpoint": "api_v1.cancel_task",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 189,
+      "operation_id": "api_v1_cancel_task_post"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/logs",
+      "endpoint": "api_v1.logs",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 198,
+      "operation_id": "api_v1_logs_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/predictions",
+      "endpoint": "api_v1.paged_predictions",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 172,
+      "operation_id": "api_v1_paged_predictions_get"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/tasks/{task_id}/result",
+      "endpoint": "api_v1.result",
+      "blueprint": "api_v1",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api_v1.py",
+      "line": 156,
+      "operation_id": "api_v1_result_get"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/tasks/{task_id}/retry",
+      "endpoint": "operations.retry_task",
+      "blueprint": "operations",
+      "auth": [
+        "admin",
+        "operator",
+        "device"
+      ],
+      "source": "api\\operations.py",
+      "line": 80,
+      "operation_id": "operations_retry_task_post"
+    },
+    {
+      "method": "GET",
+      "path": "/automl/tasks/{task_id}",
+      "endpoint": "automl_task",
+      "blueprint": "",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "backend_server.py",
+      "line": 411,
+      "operation_id": "automl_task_get"
+    },
+    {
+      "method": "POST",
+      "path": "/automl/tasks/{task_id}/cancel",
+      "endpoint": "automl_cancel",
+      "blueprint": "",
+      "auth": [
+        "admin"
+      ],
+      "source": "backend_server.py",
+      "line": 434,
+      "operation_id": "automl_cancel_post"
+    },
+    {
+      "method": "GET",
+      "path": "/automl/tasks/{task_id}/result",
+      "endpoint": "automl_result",
+      "blueprint": "",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "backend_server.py",
+      "line": 418,
+      "operation_id": "automl_result_get"
+    },
+    {
+      "method": "POST",
+      "path": "/automl/train",
+      "endpoint": "automl_train",
+      "blueprint": "",
+      "auth": [
+        "admin"
+      ],
+      "source": "backend_server.py",
+      "line": 379,
+      "operation_id": "automl_train_post"
+    },
+    {
+      "method": "POST",
+      "path": "/automl/train-all",
+      "endpoint": "automl_train_all",
+      "blueprint": "",
+      "auth": [
+        "admin"
+      ],
+      "source": "backend_server.py",
+      "line": 395,
+      "operation_id": "automl_train_all_post"
+    },
+    {
+      "method": "GET",
+      "path": "/gui/{filename}",
+      "endpoint": "static",
+      "blueprint": "",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "flask/app.py",
+      "line": 278,
+      "operation_id": "static_get"
+    },
+    {
+      "method": "GET",
+      "path": "/health",
+      "endpoint": "health",
+      "blueprint": "",
+      "auth": [
+        "public"
+      ],
+      "source": "backend_server.py",
+      "line": 308,
+      "operation_id": "health_get"
+    },
+    {
+      "method": "GET",
+      "path": "/info",
+      "endpoint": "info",
+      "blueprint": "",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "backend_server.py",
+      "line": 316,
+      "operation_id": "info_get"
+    },
+    {
+      "method": "POST",
+      "path": "/predict",
+      "endpoint": "predict",
+      "blueprint": "",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "backend_server.py",
+      "line": 324,
+      "operation_id": "predict_post"
+    },
+    {
+      "method": "POST",
+      "path": "/predict-file",
+      "endpoint": "predict_file",
+      "blueprint": "",
+      "auth": [
+        "admin",
+        "operator"
+      ],
+      "source": "backend_server.py",
+      "line": 348,
+      "operation_id": "predict_file_post"
+    }
+  ]
+}

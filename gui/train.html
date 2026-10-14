@@ -124,7 +124,7 @@
     document.getElementById('result-card').classList.add('hidden');
     try{
       const response=await fetch(all?'/automl/train-all':'/automl/train',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-      const data=await response.json(); if(!response.ok)throw new Error(data.error||'无法创建任务');
+      const data=await response.json(); if(!response.ok)throw new Error(data.error||data.message||'无法创建任务');
       taskId=data.task_id; document.getElementById('log').textContent='task_id: '+taskId; poll();
     }catch(error){document.getElementById('start').disabled=false;alert(error.message)}
   }

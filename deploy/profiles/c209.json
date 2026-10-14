@@ -1,0 +1,10 @@
+{
+  "project_directory": "F:\\npfcode\\liante",
+  "python_executable": "C:\\Users\\lsk\\.conda\\envs\\liante\\python.exe",
+  "listen_address": "127.0.0.1",
+  "port": 8000,
+  "service_name": "LianteWebServer",
+  "service_account": "existing-scheduled-task-account",
+  "settings_file": ".secrets\\c209.json",
+  "environment": "production"
+}

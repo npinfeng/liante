@@ -1,0 +1,81 @@
+[
+  {
+    "channel": 0,
+    "best_params": {
+      "n_layers": 2,
+      "hidden_0": 128,
+      "hidden_1": 64,
+      "optimizer": "AdamW",
+      "activation": "gelu",
+      "dropout": 0.051055603662306985,
+      "batch_norm": false,
+      "learning_rate": 0.0014772067889751456,
+      "weight_decay": 1.4094632198604052e-05,
+      "batch_size": 32,
+      "scheduler": "none",
+      "hidden_dims": [
+        128,
+        64
+      ]
+    },
+    "model_config": {
+      "model_type": "MLP",
+      "input_dim": 4,
+      "output_dim": 2,
+      "hidden_dims": [
+        128,
+        64
+      ],
+      "activation": "gelu",
+      "dropout": 0.051055603662306985,
+      "batch_norm": false
+    },
+    "metrics": {
+      "ea": {
+        "mse": 3.372220993041992,
+        "rmse": 1.8363608014336377,
+        "mae": 1.474647045135498,
+        "r2": 0.908672571182251
+      },
+      "bias": {
+        "mse": 5.8444695472717285,
+        "rmse": 2.417533773760302,
+        "mae": 0.6828272342681885,
+        "r2": 0.28394007682800293
+      },
+      "overall": {
+        "mse": 4.608345031738281,
+        "rmse": 2.146705622981009,
+        "mae": 1.0787371397018433,
+        "r2": 0.596306324005127
+      }
+    },
+    "validation_metrics": {
+      "ea": {
+        "mse": 3.8854799270629883,
+        "rmse": 1.9711620752903574,
+        "mae": 1.6178597211837769,
+        "r2": 0.8880062699317932
+      },
+      "bias": {
+        "mse": 10.585002899169922,
+        "rmse": 3.2534601425512997,
+        "mae": 0.7123078107833862,
+        "r2": 0.11702275276184082
+      },
+      "overall": {
+        "mse": 7.235241889953613,
+        "rmse": 2.689840495262426,
+        "mae": 1.1650837659835815,
+        "r2": 0.5025144815444946
+      }
+    },
+    "validation_mse": 1.2507928609848022,
+    "best_epoch": 38,
+    "best_trial_number": 47,
+    "best_trial_seed": 89,
+    "training_time": 100.86034659994766,
+    "model_path": "saved_models_v3\\channel_0\\model.pth",
+    "artifact_dir": "saved_models_v3\\channel_0"
+  }
+]

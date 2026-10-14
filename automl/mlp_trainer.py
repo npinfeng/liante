@@ -321,8 +321,9 @@ class MLPAutoMLTrainer:
         training_time: float,
         study: optuna.Study,
     ) -> Path:
-        artifact_dir = self.model_dir / f"channel_{channel}"
-        artifact_dir.mkdir(parents=True, exist_ok=True)
+        channel_dir = self.model_dir / f"channel_{channel}"
+        artifact_dir = channel_dir / "versions" / datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%f")
+        artifact_dir.mkdir(parents=True, exist_ok=False)
 
         temporary_model = artifact_dir / "model.pth.tmp"
         torch.save({key: value.detach().cpu() for key, value in model.state_dict().items()}, temporary_model)
@@ -370,4 +371,7 @@ class MLPAutoMLTrainer:
                 "created_at": datetime.now(timezone.utc).isoformat(),
             },
         )
+        pointer = channel_dir / "CURRENT.tmp"
+        pointer.write_text(artifact_dir.name, encoding="utf-8")
+        pointer.replace(channel_dir / "CURRENT")
         return artifact_dir

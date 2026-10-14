@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from automl.mlp_trainer import MLPAutoMLTrainer
+from config import MAX_TRAINING_WORK
 from schemas.training import TrainAllRequest, TrainRequest
 from services.prediction_service import PredictionService
 from tasks.task_manager import TrainingTaskManager
@@ -20,6 +21,8 @@ class TrainingService:
         self.prediction_service = prediction_service
 
     def queue_channel(self, request: TrainRequest) -> str:
+        if request.n_trials * request.max_epochs > MAX_TRAINING_WORK:
+            raise ValueError("训练工作量超出上限，请减少 n_trials 或 max_epochs")
         def run(update):
             result = self.trainer.train_channel(
                 request.channel,
@@ -37,6 +40,8 @@ class TrainingService:
 
     def queue_all(self, request: TrainAllRequest) -> str:
         total_trials = request.n_trials * len(request.channels)
+        if total_trials * request.max_epochs > MAX_TRAINING_WORK:
+            raise ValueError("训练工作量超出上限，请减少 channels、n_trials 或 max_epochs")
 
         def run(update):
             results = []

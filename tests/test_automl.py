@@ -73,7 +73,8 @@ def test_small_automl_smoke_creates_complete_artifact(channel_data_dir: Path, tm
         random_seed=11,
         search_space=FAST_SPACE,
     )
-    directory = model_dir / "channel_0"
+    channel_dir = model_dir / "channel_0"
+    directory = channel_dir / "versions" / (channel_dir / "CURRENT").read_text(encoding="utf-8").strip()
     assert {path.name for path in directory.iterdir()} == {
         "model.pth",
         "config.json",

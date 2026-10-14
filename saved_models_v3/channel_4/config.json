@@ -1,0 +1,13 @@
+{
+  "model_type": "MLP",
+  "input_dim": 4,
+  "output_dim": 2,
+  "hidden_dims": [
+    128,
+    32,
+    64
+  ],
+  "activation": "silu",
+  "dropout": 0.05422384175838525,
+  "batch_norm": false
+}

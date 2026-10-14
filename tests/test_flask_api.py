@@ -7,8 +7,10 @@ from pathlib import Path
 import joblib
 import numpy as np
 import torch
+import pytest
 from sklearn.preprocessing import StandardScaler
 
+import backend_server
 from backend_server import create_app
 from models.mlp import DynamicMLP, MLPConfig
 from conftest import write_channel_csv
@@ -62,6 +64,7 @@ def test_automl_train_is_async_and_exposes_status(channel_data_dir: Path, tmp_pa
     client = app.test_client()
     response = client.post(
         "/automl/train",
+        headers={"Origin": "http://localhost"},
         json={
             "channel": 0,
             "n_trials": 1,
@@ -83,6 +86,40 @@ def test_automl_train_is_async_and_exposes_status(channel_data_dir: Path, tmp_pa
     assert result.status_code == 200
     assert result.get_json()["channel"] == 0
     app.extensions["task_manager"].shutdown()
+
+
+def test_browser_origin_check_keeps_foreign_sites_blocked(tmp_path: Path):
+    app = create_app(model_dir=tmp_path / "models", data_dir=tmp_path / "data")
+    client = app.test_client()
+    try:
+        rejected = client.post("/automl/train", headers={"Origin": "https://foreign.example"},
+                               json={"channel": 9})
+        assert rejected.status_code == 403
+        assert rejected.json["code"] == "ORIGIN_DENIED"
+        accepted = client.post("/automl/train", base_url="http://127.0.0.1:8000",
+                               headers={"Origin": "http://127.0.0.1:8000"}, json={"channel": 9})
+        assert accepted.status_code == 400
+    finally:
+        app.extensions["task_manager"].shutdown()
+        app.extensions["inference"].executor.shutdown(wait=True)
+
+
+@pytest.mark.parametrize("role, expected", [("admin", 400), ("operator", 403)])
+def test_same_origin_training_preserves_role_permissions(tmp_path: Path, monkeypatch, role, expected):
+    monkeypatch.setattr(backend_server, "ADMIN_TOKEN", "test-admin")
+    monkeypatch.setattr(backend_server, "OPERATOR_TOKEN", "test-operator")
+    app = create_app(model_dir=tmp_path / "models", data_dir=tmp_path / "data")
+    client = app.test_client()
+    try:
+        response = client.post("/automl/train", headers={"Origin": "http://localhost",
+            "Authorization": f"Bearer test-{role}", "X-Liante-Role": role}, json={"channel": 9})
+        assert response.status_code == expected
+        unauthorized = client.post("/automl/train", headers={"Origin": "http://localhost"},
+                                   json={"channel": 9})
+        assert unauthorized.status_code == 401
+    finally:
+        app.extensions["task_manager"].shutdown()
+        app.extensions["inference"].executor.shutdown(wait=True)
 
 
 def test_invalid_request_and_exception_task_do_not_crash_server(tmp_path: Path):

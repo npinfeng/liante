@@ -1,0 +1,10 @@
+{
+  "project_directory": "D:\\liante",
+  "python_executable": "D:\\python\\python.exe",
+  "listen_address": "127.0.0.1",
+  "port": 8000,
+  "service_name": "LianteWebServer",
+  "service_account": "dedicated-service-account",
+  "settings_file": ".secrets\\runtime.json",
+  "environment": "production"
+}

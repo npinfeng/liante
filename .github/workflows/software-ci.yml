@@ -1,0 +1,31 @@
+name: Software acceptance
+on: [push, pull_request]
+jobs:
+  software:
+    runs-on: ubuntu-latest
+    env:
+      LIANTE_FACTORY_ONLY: '1'
+      APP_ENV: development
+      CUDA_VISIBLE_DEVICES: '-1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install CPU software dependencies
+        run: |
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+          python -m pip install -r requirements.txt
+      - name: Syntax and routes
+        run: |
+          python -m compileall -q api services tasks schemas deploy tools backend_server.py api_v1.py
+          node --check gui/app.js
+          node --check gui/operations.js
+          node --check gui/operations_link.js
+          node --check gui/stage2_folder.js
+          python tools/list_api_routes.py --json
+      - name: Software tests without model work
+        run: python -m pytest tests -q

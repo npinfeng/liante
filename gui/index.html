@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Liante AI - Inference Dashboard</title>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://unpkg.com/lucide@latest"></script>
+    <title>联特科技多模态智能检测系统</title>
     <style>
         :root {
             --primary: #3b82f6;
@@ -162,6 +160,10 @@
             grid-template-columns: repeat(2, 1fr);
             gap: 1.5rem;
         }
+        .tuning-parameter-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+        .tuning-parameter-grid .form-group { margin:0; }
+        .tuning-parameter-grid input { font-variant-numeric:tabular-nums; }
+        @media (max-width: 900px) { .tuning-parameter-grid { grid-template-columns:1fr; } }
 
         .metric-card {
             background: rgba(255, 255, 255, 0.03);
@@ -253,244 +255,268 @@
             color: white;
             border-color: var(--primary);
         }
+        .stage-nav { grid-column:1 / -1; display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.75rem; }
+        .stage-tab { text-align:left; padding:1rem; border-radius:.8rem; border:1px solid rgba(255,255,255,.12); background:var(--card-bg); color:var(--text); cursor:pointer; }
+        .stage-tab.active { border-color:var(--primary); box-shadow:0 0 0 1px var(--primary), 0 8px 24px rgba(59,130,246,.14); }
+        .stage-tab strong, .stage-tab small { display:block; }
+        .stage-tab strong { font-size:1rem; line-height:1.45; }
+        .stage-tab small { margin-top:.4rem; color:var(--text-dim); line-height:1.4; }
+        .stage-hint { margin:.5rem 0 1.25rem; color:var(--text-dim); line-height:1.6; }
+        .image-preview { display:flex; align-items:center; justify-content:center; min-height:180px; margin:0 0 1rem; border:1px dashed rgba(148,163,184,.4); border-radius:.75rem; color:var(--text-dim); background:rgba(15,23,42,.35); overflow:hidden; }
+        .image-preview img { max-width:100%; max-height:360px; object-fit:contain; }
+        .stage1-inspection { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:1rem; margin:1.1rem 0; }
+        .stage1-image-card { min-width:0; border:1px solid rgba(148,163,184,.22); border-radius:.8rem; background:linear-gradient(145deg,rgba(30,41,59,.78),rgba(15,23,42,.55)); padding:.7rem; }
+        .stage1-image-heading { display:flex; justify-content:space-between; align-items:center; gap:.6rem; margin:.1rem .2rem .55rem; }
+        .stage1-image-heading small { color:#8fb9e9; }
+        .stage1-image-card .image-preview { min-height:250px; margin:0; background:rgba(2,6,23,.52); }
+        .stage1-image-card .image-preview img,.stage1-image-card .image-preview canvas { max-width:100%; max-height:360px; object-fit:contain; border-radius:.4rem; }
+        .decision-grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.75rem; margin:1rem 0; }
+        .decision-item { padding:1rem; border:1px solid rgba(255,255,255,.1); border-radius:.75rem; background:rgba(15,23,42,.35); min-width:0; }
+        .decision-item small, .decision-item strong { display:block; overflow-wrap:anywhere; }
+        .decision-item small { color:var(--text-dim); margin-bottom:.35rem; }
+        .decision-item strong { font-size:1.1rem; }
+        .feature-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:0 1rem; }
+        .check-line { display:flex; align-items:flex-start; gap:.6rem; margin:.5rem 0 1rem; line-height:1.5; }
+        .check-line input { width:auto; margin-top:.25rem; }
+        .stream-controls { display:flex; gap:.75rem; }
+        .stream-controls button { flex:1; }
+        .stream-stats { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:.6rem; margin:1rem 0; }
+        .stream-stat { background:rgba(15,23,42,.35); border:1px solid rgba(255,255,255,.1); border-radius:.6rem; padding:.7rem; }
+        .stream-stat small, .stream-stat strong { display:block; }
+        .stream-stat small { color:var(--text-dim); }
+        .stream-endpoint { overflow-wrap:anywhere; padding:.8rem; border-radius:.5rem; background:rgba(15,23,42,.55); color:#b7d2ff; margin:1rem 0; line-height:1.6; }
+        .stage-view[hidden] { display:none !important; }
+        .task-panel { grid-column: 1 / -1; display:grid; grid-template-columns:minmax(0,1fr); gap:1rem; }
+        .task-panel .card { min-width:0; }
+        .task-panel h2 { text-transform:none; color:var(--text); }
+        .task-panel button { color:white; background:var(--primary); border:0; border-radius:.5rem; padding:.7rem 1rem; cursor:pointer; }
+        .task-panel pre { max-height:220px; overflow:auto; white-space:pre-wrap; word-break:break-word; color:var(--text-dim); font-size:.8rem; }
+        .task-panel .logs { height:190px; overflow:auto; border:1px solid #35445e; border-radius:.5rem; padding:.5rem; font-size:.78rem; white-space:pre-wrap; }
+        .task-panel .ERROR { color:#ff8585; } .task-panel .WARNING { color:#ffd38a; }
+        .task-panel .meta { line-height:1.8; overflow-wrap:anywhere; white-space:pre-line; }
+        .stage1-workbench { display:grid; grid-template-columns:280px minmax(0,1fr); gap:1.2rem; }
+        .stage1-controls { padding:1.1rem; border:1px solid #284360; border-radius:.8rem; background:#071729; align-self:start; }
+        .stage1-controls h3 { margin:0 0 .45rem; font-size:1rem; color:#f3f8ff; }
+        .stage1-controls .stage-hint { font-size:.8rem; margin:.3rem 0 1rem; }
+        .stage1-controls .form-group { margin-bottom:.9rem; }
+        .stage1-controls label { font-size:.78rem; }
+        .stage1-controls input { padding:.65rem; font-size:.85rem; }
+        .stage1-controls .stream-controls { flex-direction:column; gap:.55rem; }
+        .stage1-controls #run-aoi { background:#1b83d4; }
+        .stage1-controls #stop-aoi { background:#7b2534; }
+        .stage1-controls button:disabled { opacity:.5; cursor:not-allowed; }
+        .stage1-status { margin-top:1rem; padding:.75rem; background:#10243a; border:1px solid #2e506e; border-radius:.55rem; line-height:1.65; font-size:.8rem; }
+        .stage1-stage { min-width:0; }
+        .stage1-stage-header { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; padding:.15rem 0 1rem; border-bottom:1px solid #29425c; }
+        .stage1-stage-header h2 { margin:0 0 .35rem; }
+        .stage1-stage-header small { color:#a9c4dc; }
+        .stage1-live { display:flex; gap:.6rem; align-items:center; color:#a9c4dc; font-size:.82rem; }
+        .stage1-live:before { content:''; width:.62rem; height:.62rem; border-radius:50%; background:#64748b; }
+        .stage1-live.running:before { background:#2ade92; box-shadow:0 0 11px #2ade92; }
+        .stage1-workbench .stream-stats { grid-template-columns:repeat(6,minmax(0,1fr)); margin:.9rem 0; }
+        .stage1-workbench .stream-stat { background:#10243a; border-color:#284360; padding:.65rem; }
+        .stage1-workbench .stream-stat strong { font-size:1.15rem; margin-top:.2rem; }
+        .stage1-frame-bar { display:flex; flex-wrap:wrap; align-items:center; gap:.8rem; margin:.9rem 0; padding:.7rem .9rem; background:#0a2036; border-left:3px solid #2787d5; border-radius:.3rem; font-size:.83rem; }
+        .stage1-frame-bar strong { color:#eaf4ff; }
+        .stage1-frame-bar span { color:#a8c2d9; }
+        .stage1-workbench .stage1-inspection { margin:.8rem 0; }
+        .stage1-workbench .stage1-image-card { background:#071729; border-color:#2b4864; }
+        .stage1-workbench .stage1-image-card .image-preview { min-height:300px; }
+        .stage1-workbench .stage1-image-card .image-preview img,.stage1-workbench .stage1-image-card .image-preview canvas { max-height:450px; }
+        .stage1-result-strip { display:flex; gap:.7rem; align-items:center; flex-wrap:wrap; padding:.7rem .9rem; border:1px solid #2b4864; border-radius:.55rem; background:#10243a; font-size:.85rem; }
+        .stage1-result-strip strong { color:#f4f8fc; }
+        .stage1-result-strip .ng { color:#ff7284; } .stage1-result-strip .ok { color:#38d99b; }
+        .stage1-details { margin-top:1rem; border-top:1px solid #2b4864; padding-top:.8rem; }
+        .stage1-details summary { cursor:pointer; color:#a9c4dc; }
+        .stage1-details .stream-endpoint { font-size:.78rem; margin:.6rem 0; }
+        @media(max-width:1050px){
+            .stage1-workbench {grid-template-columns:minmax(0,1fr)}
+            .stage1-workbench .stream-stats {grid-template-columns:repeat(3,minmax(0,1fr))}
+            main {grid-template-columns:minmax(0,1fr)}
+            .sidebar, .results-container, .task-panel {min-width:0}
+            .results-container {grid-template-columns:minmax(0,1fr)}
+            .metrics-grid {grid-template-columns:repeat(2,minmax(0,1fr))}
+            canvas {max-width:100%}
+        }
+        @media(max-width:600px){
+            .stage1-workbench .stream-stats {grid-template-columns:repeat(2,minmax(0,1fr))}
+            header {padding:1rem; gap:.75rem; flex-wrap:wrap}
+            .logo {font-size:1.1rem}
+            main {padding:1rem; gap:1rem}
+            .card {padding:1rem}
+            .metric-value {font-size:clamp(1.4rem,6vw,2.5rem); overflow-wrap:anywhere}
+            .stage-tab {padding:.65rem}
+            .stage-tab strong {font-size:.84rem}
+            .stage-tab small {font-size:.68rem}
+            .decision-grid {grid-template-columns:minmax(0,1fr)}
+            .feature-grid {grid-template-columns:minmax(0,1fr)}
+            .stream-stats {grid-template-columns:repeat(2,minmax(0,1fr))}
+            .stage1-inspection {grid-template-columns:minmax(0,1fr)}
+        }
     </style>
 </head>
 <body>
 
     <div id="loading">
         <div class="spinner"></div>
-        <p>Running Model Inference...</p>
+        <p>模型推理中…</p>
     </div>
 
     <header>
         <div class="logo">
             <i data-lucide="cpu"></i>
-            Liante AI Dashboard
+            联特科技多模态智能检测系统
         </div>
         <a href="/gui/train.html" style="color:#a9c1ff;text-decoration:none;font-weight:700;">MLP AutoML 训练 →</a>
         <div class="status-badge">
             <i data-lucide="shield-check" style="width:14px; display:inline-block; vertical-align:middle; margin-right:4px;"></i>
-            Backend Active
+            <span id="overall-status">正在检查服务</span>
         </div>
     </header>
 
-    <main>
-        <div class="sidebar">
+    <main id="app-main" data-active-stage="stage1">
+        <nav class="stage-nav" aria-label="检测阶段">
+            <button type="button" class="stage-tab active" data-stage="stage1" aria-pressed="true"><strong>01 AOI外观检测</strong><small id="stage1-model-state">检查模型状态中…</small></button>
+            <button type="button" class="stage-tab" data-stage="stage2" aria-pressed="false"><strong>02 EA/Bias参数推荐</strong><small id="stage2-model-state">检查模型状态中…</small></button>
+            <button type="button" class="stage-tab" data-stage="stage3" aria-pressed="false"><strong>03 多模态质量分级</strong><small id="stage3-model-state">检查模型状态中…</small></button>
+        </nav>
+        <div class="sidebar stage-view" data-stage-view="stage2" hidden>
             <div class="card">
-                <h2><i data-lucide="settings-2"></i> Inference Config</h2>
-                
-                <div class="form-group">
-                    <label>Architecture</label>
-                    <input value="MLP（每个 Channel 自动加载当前最佳模型）" disabled>
-                </div>
-
-                <div class="form-group">
-                    <label>Module Channel (0-7)</label>
-                    <div class="channel-grid" id="channel-picker">
-                        <button class="channel-btn active" data-val="0">CH 0</button>
-                        <button class="channel-btn" data-val="1">CH 1</button>
-                        <button class="channel-btn" data-val="2">CH 2</button>
-                        <button class="channel-btn" data-val="3">CH 3</button>
-                        <button class="channel-btn" data-val="4">CH 4</button>
-                        <button class="channel-btn" data-val="5">CH 5</button>
-                        <button class="channel-btn" data-val="6">CH 6</button>
-                        <button class="channel-btn" data-val="7">CH 7</button>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2><i data-lucide="bar-chart-3"></i> Feature Inputs (4D)</h2>
-                <div class="form-group">
-                    <label>Feature X1</label>
-                    <input type="number" step="0.001" value="1.573" id="f1">
-                </div>
-                <div class="form-group">
-                    <label>Feature X2</label>
-                    <input type="number" step="0.001" value="4.598" id="f2">
-                </div>
-                <div class="form-group">
-                    <label>Feature X3</label>
-                    <input type="number" step="0.001" value="1.439" id="f3">
-                </div>
-                <div class="form-group">
-                    <label>Feature X4</label>
-                    <input type="number" step="0.001" value="0.919" id="f4">
-                </div>
-
-                <div style="display: flex; gap: 0.5rem;">
-                    <button class="btn-predict" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.1);" onclick="loadSample()">
-                        <i data-lucide="database"></i> Load Sample
-                    </button>
-                    <button class="btn-predict" onclick="runInference()">
-                        <i data-lucide="play"></i> Run Inference
-                    </button>
-                </div>
-            </div>
-
-            <div class="card">
-                <h2><i data-lucide="file-spreadsheet"></i> File Prediction</h2>
-                <div class="form-group">
-                    <label>CSV/XLSX path on the Flask server</label>
-                    <input type="text" id="file-path" placeholder="D:/data/predict.xlsx">
-                </div>
-                <button class="btn-predict" onclick="runFileInference()">
-                    <i data-lucide="folder-input"></i> Predict File
-                </button>
+                <h2>EA/Bias 文件夹预测</h2>
+                <p class="stage-hint">自动读取 CSV/XLSX 特征，按文件名或子目录中的 channel_0–channel_7、CH0–CH7 匹配模型。</p>
+                <div class="form-group"><label>模型架构</label><input value="MLP（自动匹配通道）" disabled></div>
+                <div class="form-group"><label for="stage2-source">输入文件夹</label><select id="stage2-source" style="width:100%;padding:12px;background:#0f172a;color:#e2e8f0;border:1px solid #334155;border-radius:8px;"><option value="">正在读取数据源…</option></select></div>
+                <p class="stage-hint" id="stage2-source-path" style="overflow-wrap:anywhere;"></p>
+                <div class="form-group"><label for="stage2-product">产品 / 批次编号（可选）</label><input id="stage2-product" maxlength="200" placeholder="用于产品追溯"></div>
+                <div class="form-group"><label>已发布配方编号（联调可空）</label><input id="stage2-recipe-id" maxlength="80"><label>配方版本</label><input id="stage2-recipe-version" maxlength="80"></div>
+                <div class="form-group"><label><input id="stage2-recursive" type="checkbox" checked style="width:auto;"> 包含子文件夹</label></div>
+                <p class="stage-hint">无需填写特征数值或单个文件路径。任务处理本次识别到的全部文件；新增文件可刷新后再次预测。</p>
+                <button id="scan-folder" class="btn-predict" type="button">刷新并自动识别文件</button>
+                <p class="stage-hint" id="stage2-scan-info" aria-live="polite">等待识别文件夹。</p>
+                <button id="run-folder" class="btn-predict" type="button" disabled>开始文件夹预测</button>
             </div>
         </div>
 
-        <div class="results-container">
+        <div class="results-container stage-view" data-stage-view="stage2" hidden>
+            <div class="card"><h2>外部调测参数 · 硅光 / 非硅光</h2>
+                <p class="stage-hint">四项实测值由外部调测或人工录入；这里不控制设备，也不把数值当作 EA/Bias 模型预测。</p>
+                <div class="tuning-parameter-grid">
+                    <div class="form-group"><label for="tuning-silicon-power">硅光 · 功率（dBm）</label><input id="tuning-silicon-power" type="number" step="any" inputmode="decimal"></div>
+                    <div class="form-group"><label for="tuning-silicon-er">硅光 · 消光比（dB）</label><input id="tuning-silicon-er" type="number" step="any" inputmode="decimal"></div>
+                    <div class="form-group"><label for="tuning-nonsilicon-power">非硅光 · 功率（dBm）</label><input id="tuning-nonsilicon-power" type="number" step="any" inputmode="decimal"></div>
+                    <div class="form-group"><label for="tuning-nonsilicon-er">非硅光 · 消光比（dB）</label><input id="tuning-nonsilicon-er" type="number" step="any" inputmode="decimal"></div>
+                </div>
+                <p class="stage-hint">登记 Stage3 合格证据时，这四项将随证据一并提交。</p>
+            </div>
+            <div class="card"><h2>自动识别的文件</h2><div id="stage2-input-files" style="overflow:auto;max-height:340px;"></div></div>
+            <p class="stage-hint" id="stage2-preview-label">完成预测后选择文件查看逐行结果。</p>
             <div class="metrics-grid">
                 <div class="card metric-card">
-                    <div class="metric-label">Predicted EA</div>
+                    <div class="metric-label">当前行 EA</div>
                     <div class="metric-value" id="res-ea">--</div>
                 </div>
                 <div class="card metric-card">
-                    <div class="metric-label">Predicted BIAS</div>
+                    <div class="metric-label">当前行 Bias</div>
                     <div class="metric-value" id="res-bias" style="color: var(--accent);">--</div>
                 </div>
             </div>
 
             <div class="card chart-container">
-                <h2><i data-lucide="line-chart"></i> Output Visualization</h2>
+                <h2><i data-lucide="line-chart"></i> 预测结果图</h2>
                 <canvas id="outputChart"></canvas>
             </div>
 
-            <div class="card">
-                <h2><i data-lucide="table-2"></i> File Results</h2>
-                <pre id="file-results" style="max-height: 320px; overflow: auto; color: var(--text-dim); white-space: pre-wrap;">No file prediction yet.</pre>
+            <div class="card"><h2>逐文件处理结果</h2><div id="file-results" style="max-height:320px;overflow:auto;">暂无预测结果。</div></div>
+            <div class="card"><h2>逐行 EA / Bias 预测</h2>
+                <label for="stage2-result-file">查看文件</label><select id="stage2-result-file" style="width:100%;padding:10px;background:#0f172a;color:#e2e8f0;"></select>
+                <p class="stage-hint" id="stage2-page-info" aria-live="polite">暂无结果。</p>
+                <div id="stage2-prediction-rows" style="overflow:auto;max-height:360px;"></div>
+                <div class="stream-controls"><button id="stage2-prev" type="button" disabled>上一页</button><button id="stage2-next" type="button" disabled>下一页</button></div>
             </div>
         </div>
+        <section class="task-panel">
+          <div class="card stage-view" data-stage-view="stage1">
+            <div class="stage1-workbench">
+              <aside class="stage1-controls" aria-label="Stage1 检测控制">
+                <h3>AOI 检测控制</h3>
+                <p class="stage-hint">从服务器图片目录逐张送入 AOI 检测流。</p>
+                <div class="form-group"><label for="stage1-directory">图片目录（服务器路径）</label><input id="stage1-directory" value="data/stage1_input" placeholder="例如 data/stage1_input" autocomplete="off"></div>
+                <div class="form-group"><label for="stage1-product">产品 / 批次编号</label><input id="stage1-product" value="DEMO-001" maxlength="200"></div>
+                <div class="form-group"><label for="stage1-interval">逐张间隔（秒）</label><input id="stage1-interval" type="number" min="0.1" max="10" step="0.1" value="1"></div>
+                <input id="stage1-source" value="AOI-FOLDER-DEMO" type="hidden">
+                <div class="stream-controls"><button id="run-aoi" type="button">开始检测</button><button id="stop-aoi" type="button" disabled>停止检测</button></div>
+                <div class="stage1-status" id="stage1-meta" aria-live="polite">等待开始检测</div>
+              </aside>
+              <div class="stage1-stage">
+                <div class="stage1-stage-header"><div><h2>Stage1 · 实时检测</h2><small>原图与模型预测同步显示，缺陷位置以方框标注</small></div><div class="stage1-live" id="stage1-live">待机</div></div>
+                <div class="stream-stats" aria-label="AOI 流实时统计">
+                  <div class="stream-stat"><small>已接收</small><strong id="aoi-accepted">0</strong></div>
+                  <div class="stream-stat"><small>已处理</small><strong id="aoi-processed">0</strong></div>
+                  <div class="stream-stat"><small>处理失败</small><strong id="aoi-failed">0</strong></div>
+                  <div class="stream-stat"><small>拥塞拒收</small><strong id="aoi-rejected">0</strong></div>
+                  <div class="stream-stat"><small>队列</small><strong id="aoi-queue">0/0</strong></div>
+                  <div class="stream-stat"><small>处理速率</small><strong id="aoi-fps">0 FPS</strong></div>
+                </div>
+                <div class="stage1-frame-bar"><strong id="stage1-sequence">等待图片</strong><span id="stage1-current-file">尚未读取目录</span></div>
+                <div class="stage1-inspection" id="stage1-preview" aria-label="Stage1 原图与模型预测图">
+                  <div class="stage1-image-card"><div class="stage1-image-heading"><strong>原始图像</strong><small>当前帧</small></div><div class="image-preview"><span>点击“开始检测”后逐张显示</span><img id="stage1-preview-image" alt="当前 AOI 原始图片帧" hidden></div></div>
+                  <div class="stage1-image-card"><div class="stage1-image-heading"><strong>模型预测图像</strong><small>缺陷框 / 类型</small></div><div class="image-preview"><span id="stage1-prediction-placeholder">等待模型结果</span><canvas id="stage1-prediction-canvas" aria-label="当前 AOI 模型预测图像" hidden></canvas></div></div>
+                </div>
+                <div class="stage1-result-strip" aria-live="polite"><span>当前判定</span><strong id="stage1-judgement">待检测</strong><span>缺陷类型</span><strong id="stage1-defect-types">—</strong></div>
+                <details class="stage1-details"><summary>运行日志与接入信息</summary><div class="stream-endpoint" id="stage1-endpoint">启动后显示任务和设备接入地址。</div><pre id="stage1-result">暂无帧结果</pre><div class="logs" id="stage1-logs"></div></details>
+              </div>
+            </div>
+          </div>
+          <div class="card stage-view" data-stage-view="stage2" hidden><h2>EA/Bias参数推荐 · 文件任务状态</h2>
+            <h2>MES 数据来源</h2><div class="stream-endpoint" id="stage2-mes-endpoint"></div>
+            <p class="stage-hint" id="stage2-source-meta">等待读取来源配置。</p>
+            <button id="stage2-refresh-source-logs" type="button">刷新 MES 接入日志</button>
+            <div id="stage2-source-logs" style="max-height:260px;overflow:auto;">暂无接入日志。</div>
+            <h2>当前预测任务</h2>
+            <div class="meta" id="stage2-meta">当前任务：无<br>当前文件：无<br>当前通道：无</div>
+            <h2>运行日志</h2><div class="logs" id="stage2-logs"></div>
+            <h2>批次摘要</h2><pre id="stage2-result">暂无结果</pre>
+          </div>
+          <div class="card stage-view" data-stage-view="stage3" hidden><h2>合格产品多模态分级</h2>
+            <p class="stage-hint">仅前序 AOI、光学、电性能和外部工艺系统回执均合格的产品进入分级。本系统记录硅光与非硅光四项参数、客户 A/B/C 分级及其依据。最终自动分级需真实 Stage3 模型；模型未配置时不会生成最终等级。</p>
+            <div class="form-group"><label>产品编号</label><input id="stage3-product" value="DEMO-001"></div>
+            <div class="form-group"><label>合格证据编号</label><input id="stage3-qualification" placeholder="先登记人工证据，或输入已有编号"></div>
+            <details><summary>登记人工合格证据</summary>
+              <p class="stage-hint">需关联同一产品已完成的 AOI 和 Stage2 任务。光电测量与合格结论由复核人负责；系统保存复核人、时间和说明。</p>
+              <div class="form-group"><label>AOI 任务编号</label><input id="stage3-aoi-task" placeholder="已完成的 Stage1 任务 ID"></div>
+              <div class="form-group"><label>Stage2 任务编号</label><input id="stage3-stage2-task" placeholder="已完成的 EA/Bias 任务 ID"></div>
+              <div class="form-group"><label>光学功率 dBm</label><input id="stage3-optical-power" type="number" step="any" placeholder="实际测量值"></div>
+              <div class="form-group"><label>电压 V</label><input id="stage3-electrical-voltage" type="number" step="any" placeholder="实际测量值"></div>
+              <div class="form-group"><label><input id="stage3-optical-qualified" type="checkbox"> 光学检测人工确认合格</label></div>
+              <div class="form-group"><label><input id="stage3-electrical-qualified" type="checkbox"> 电学检测人工确认合格</label></div>
+              <div class="form-group"><label><input id="stage3-tuning-complete" type="checkbox"> 外部调测系统已返回完成回执</label></div>
+              <div class="form-group"><label>配方编号</label><input id="stage3-recipe-id" placeholder="实际生产配方编号"></div>
+              <div class="form-group"><label>配方版本</label><input id="stage3-recipe-version" placeholder="与前序任务一致的版本"></div>
+              <p class="stage-hint">操作员与复核身份由服务器绑定当前登录账号。</p>
+              <div class="form-group"><label>测量时间</label><input id="stage3-measured-at" type="datetime-local"></div>
+              <div class="form-group"><label>复核说明</label><input id="stage3-review-notes" placeholder="仪器、工单或判断依据"></div>
+              <div class="form-group"><label for="stage3-customer-grade">客户分级（人工依据）</label><select id="stage3-customer-grade"><option value="">请选择</option><option>A</option><option>B</option><option>C</option></select></div>
+              <div class="form-group"><label for="stage3-grading-basis">分级依据 / 客户标准</label><input id="stage3-grading-basis" maxlength="2000" placeholder="填写客户规范、版本、阈值或判定说明"></div>
+              <p class="stage-hint">客户分级作为融合判定的证据保存；最终自动等级仍需真实 Stage3 模型。请先在第二阶段填写硅光与非硅光的四项实测值。</p>
+              <button id="create-qualification" type="button">登记人工合格证据</button>
+              <div class="meta" id="stage3-qualification-meta">尚未登记</div>
+            </details>
+            <p class="stage-hint">分级只使用服务端保存且当前有效的合格证据。<a href="operations.html">证据历史、撤销、替换与人工复核</a></p>
+            <button id="run-grading">提交质量分级</button>
+            <div class="decision-grid" aria-label="质量分级摘要">
+              <div class="decision-item"><small>分级入围</small><strong id="stage3-decision">待确认</strong></div>
+              <div class="decision-item"><small>最终等级</small><strong id="stage3-grade">未分级</strong></div>
+              <div class="decision-item"><small>判定原因</small><strong id="stage3-reason">暂无</strong></div>
+            </div>
+            <div class="meta" id="stage3-fusion-evidence">融合依据：等待合格证据；包含 Stage1、Stage2、四项调测参数和客户分级。</div>
+            <div class="meta" id="stage3-meta">等待中</div><h2>分级结果</h2><pre id="stage3-result">暂无结果</pre>
+            <h2>运行日志</h2><div class="logs" id="stage3-logs"></div>
+          </div>
+        </section>
     </main>
 
-    <script>
-        lucide.createIcons();
-        
-        let selectedChannel = 0;
-        const channelBtns = document.querySelectorAll('.channel-btn');
-        channelBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                channelBtns.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                selectedChannel = parseInt(btn.dataset.val);
-            });
-        });
-
-        // Initialize Chart
-        const ctx = document.getElementById('outputChart').getContext('2d');
-        const chart = new Chart(ctx, {
-            type: 'bar',
-            data: {
-                labels: ['EA (Error)', 'BIAS (Shift)'],
-                datasets: [{
-                    label: 'Magnitude',
-                    data: [0, 0],
-                    backgroundColor: ['rgba(16, 185, 129, 0.6)', 'rgba(139, 92, 246, 0.6)'],
-                    borderColor: ['#10b981', '#8b5cf6'],
-                    borderWidth: 2,
-                    borderRadius: 8
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { color: 'rgba(255,255,255,0.05)' },
-                        ticks: { color: '#94a3b8' }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { color: '#94a3b8' }
-                    }
-                },
-                plugins: {
-                    legend: { display: false }
-                }
-            }
-        });
-
-        function loadSample() {
-            // Generates slightly randomized realistic values around the baseline
-            document.getElementById('f1').value = (1.5 + Math.random() * 0.2).toFixed(3);
-            document.getElementById('f2').value = (4.5 + Math.random() * 0.2).toFixed(3);
-            document.getElementById('f3').value = (1.4 + Math.random() * 0.1).toFixed(3);
-            document.getElementById('f4').value = (0.9 + Math.random() * 0.1).toFixed(3);
-            console.log("Sample data loaded");
-        }
-
-        function showPrediction(prediction) {
-            document.getElementById('res-ea').innerText = prediction.ea.toFixed(4);
-            document.getElementById('res-bias').innerText = prediction.bias.toFixed(4);
-            chart.data.datasets[0].data = [prediction.ea, prediction.bias];
-            chart.update();
-        }
-
-        async function runInference() {
-            const loading = document.getElementById('loading');
-            loading.style.display = 'flex';
-
-            const payload = {
-                channel: selectedChannel,
-                data: [[
-                    parseFloat(document.getElementById('f1').value),
-                    parseFloat(document.getElementById('f2').value),
-                    parseFloat(document.getElementById('f3').value),
-                    parseFloat(document.getElementById('f4').value)
-                ]]
-            };
-
-            try {
-                const response = await fetch('/predict', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
-                });
-
-                if (!response.ok) throw new Error('Inference failed');
-
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || 'Prediction failed');
-                const prediction = result.predictions[0];
-
-                showPrediction(prediction);
-
-            } catch (err) {
-                alert('Error connecting to backend server: ' + err.message);
-            } finally {
-                loading.style.display = 'none';
-            }
-        }
-
-        async function runFileInference() {
-            const loading = document.getElementById('loading');
-            const filePath = document.getElementById('file-path').value.trim();
-            if (!filePath) {
-                alert('Please enter a CSV/XLSX path accessible to the Flask server.');
-                return;
-            }
-            loading.style.display = 'flex';
-            try {
-                const response = await fetch('/predict-file', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        channel: selectedChannel,
-                        file_path: filePath
-                    })
-                });
-                const result = await response.json();
-                if (!response.ok) throw new Error(result.error || 'File prediction failed');
-                showPrediction(result.predictions[0]);
-                document.getElementById('file-results').innerText = JSON.stringify(result.predictions, null, 2);
-            } catch (err) {
-                alert('File prediction error: ' + err.message);
-            } finally {
-                loading.style.display = 'none';
-            }
-        }
-    </script>
+    <script src="stage2_folder.js" defer></script>
+    <script src="app.js" defer></script>
+    <script src="operations_link.js" defer></script>
 </body>
 </html>
